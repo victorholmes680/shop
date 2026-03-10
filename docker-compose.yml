@@ -1,0 +1,69 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: shopmall-postgres
+    environment:
+      POSTGRES_DB: shopmall
+      POSTGRES_USER: shopmall
+      POSTGRES_PASSWORD: shopmall_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U shopmall"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: shopmall-backend
+    environment:
+      DATABASE_URL: jdbc:postgresql://postgres:5432/shopmall
+      DATABASE_USERNAME: shopmall
+      DATABASE_PASSWORD: shopmall_dev
+      JWT_SECRET: YW5vdGhlcnZlcnlsb25nc2VjcmV0a2V5dGhhdGlzbm90Zm9yYW55b25ldG9zZWVhbmRiZWF1dGlmdWxmb3Jqd3R0b2tlbnN1Y2Nlc3M
+      JWT_EXPIRATION: 86400000
+      SPRING_PROFILES_ACTIVE: prod
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/api/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: /api/
+    container_name: shopmall-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+volumes:
+  postgres_data:
+    driver: local

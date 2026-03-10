@@ -1,0 +1,108 @@
+spring:
+  application:
+    name: shopmall-backend
+
+  # Active profile
+  profiles:
+    active: dev
+
+  # Database Configuration (H2 for development)
+  datasource:
+    url: jdbc:h2:mem:shopmall;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  # JPA/Hibernate Configuration
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+        format_sql: true
+    open-in-view: false
+
+  # Flyway Migrations
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+  # H2 Console (for development)
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+# Server Configuration
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+
+# Application Configuration
+app:
+  jwt:
+    secret: ${JWT_SECRET:YW5vdGhlcnZlcnlsb25nc2VjcmV0a2V5dGhhdGlzbm90Zm9yYW55b25ldG9zZWVhbmRiZWF1dGlmdWxmb3Jqd3R0b2tlbnN1Y2Nlc3M}
+    expiration: ${JWT_EXPIRATION:86400000} # 24 hours in milliseconds
+  cors:
+    allowed-origins: ${CORS_ORIGINS:http://localhost:3000,http://localhost:5173}
+    allowed-methods: GET,POST,PUT,DELETE,OPTIONS,PATCH
+    allowed-headers: "*"
+    allow-credentials: true
+    max-age: 3600
+
+# Logging
+logging:
+  level:
+    com.shopmall: DEBUG
+    org.springframework.security: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+
+# SpringDoc OpenAPI Configuration
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+    operations-sorter: method
+    tags-sorter: alpha
+  show-actuator: false
+
+---
+# Production Profile
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+  # PostgreSQL Configuration for Production
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/shopmall}
+    driver-class-name: org.postgresql.Driver
+    username: ${DATABASE_USERNAME:shopmall}
+    password: ${DATABASE_PASSWORD:shopmall}
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  # H2 Console disabled in production
+  h2:
+    console:
+      enabled: false
+
+# Production Logging
+logging:
+  level:
+    com.shopmall: INFO
+    org.springframework.security: WARN
+    org.hibernate.SQL: WARN
